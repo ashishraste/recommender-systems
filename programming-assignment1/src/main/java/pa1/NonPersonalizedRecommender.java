@@ -39,13 +39,43 @@ public class NonPersonalizedRecommender {
 		csv = cdb.build();
 	}
 	
-	 public void eventExample() {
-		 EventDAO eventdao = csv.getEventDAO();
-		 // a cursor over all events in the dataset
-		 Cursor<Event> mycursor = eventdao.streamEvents();
-		 System.out.println("Events list:\n");
-		 for(Event aEvent : mycursor) {
-			 System.out.println(aEvent.getItemId() +  ", " + aEvent.getUserId());
-		 }	        
-	  }
+	// list all the events taking place in the dataset
+	public void eventsListing() {
+		EventDAO eventdao = csv.getEventDAO();
+		// a cursor over all events in the dataset
+		Cursor<Event> eventCursor = eventdao.streamEvents();
+		System.out.println("Events list:\n");
+		for(Event aEvent : eventCursor) {
+			System.out.println(aEvent.getItemId() +  ", " + aEvent.getUserId());
+		}	        
+	 }
+
+
+	// get a listing of the items that each user has interacted with
+	public void eventsByUsers() {
+		UserDAO userdao = csv.getUserDAO();
+		LongSet userSet = userdao.getUserIds();
+		UserEventDAO ueventdao = csv.getUserEventDAO();
+
+		for(Long userID: userSet) {
+			System.out.println("\nUserID: " + userID + " ");
+			UserHistory<Event> ueventHistory = ueventdao.getEventsForUser(userID);
+			LongSet userEventSet = ueventHistory.itemSet();
+			System.out.println(userEventSet.toString());
+		}		
+	}
+	
+	// get a listing of all the users who have interacted with an item
+	public void eventsByItems() {
+		ItemDAO itemdao = csv.getItemDAO();
+		LongSet itemSet = itemdao.getItemIds();
+		ItemEventDAO ieventdao = csv.getItemEventDAO();				
+		
+		for(Long itemID: itemSet) {
+			System.out.println("\nItemID: " + itemID + " ");			
+			LongSet userItemSet = ieventdao.getUsersForItem(itemID);
+			System.out.println(userItemSet.toString());
+		}
+	}
+
 }
