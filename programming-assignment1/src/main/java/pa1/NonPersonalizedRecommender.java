@@ -8,11 +8,6 @@ import java.math.BigDecimal;
 
 import org.grouplens.lenskit.eval.data.CSVDataSource;
 import org.grouplens.lenskit.eval.data.CSVDataSourceBuilder;
-
-import it.unimi.dsi.fastutil.longs.LongArraySet;
-import it.unimi.dsi.fastutil.longs.LongSet;
-import it.unimi.dsi.fastutil.longs.LongSortedSet;
-
 import org.grouplens.lenskit.collections.LongUtils;
 import org.grouplens.lenskit.cursors.Cursor;
 import org.grouplens.lenskit.data.dao.EventDAO;
@@ -24,6 +19,12 @@ import org.grouplens.lenskit.data.event.Event;
 import org.grouplens.lenskit.data.history.UserHistory;
 import org.grouplens.lenskit.data.pref.PreferenceDomain;
 import org.grouplens.lenskit.data.pref.PreferenceDomainBuilder;
+
+import it.unimi.dsi.fastutil.longs.LongArraySet;
+import it.unimi.dsi.fastutil.longs.LongSet;
+import it.unimi.dsi.fastutil.longs.LongSortedSet;
+
+import au.com.bytecode.opencsv.CSVWriter;
 
 public class NonPersonalizedRecommender {
 	int movies[];
@@ -92,28 +93,11 @@ public class NonPersonalizedRecommender {
 		return mIDSet;		
 	}
 	
-	// calculate [(x and y)/x] of UserIDs for given MovieIDs 
+	// calculate [(x and y) / x] of UserIDs for given MovieIDs 
 	public void nonPersonalRecoCalculation(long[] movieIDs) {
 		ItemDAO itemdao ;
 		LongSet itemSet ;
 		Long[] givenMovieIDs = new Long[movieIDs.length];
-//		outputFile = new File("data/outputfile.csv");
-//		
-//		if(!outputFile.exists()) {
-//			try {
-//				outputFile.createNewFile();
-//			}
-//			catch (IOException e) {			
-//				e.printStackTrace();
-//			}
-//		}
-//		
-//        try {
-//			BufferedWriter bufWriter =  new BufferedWriter(new FileWriter(outputFile, true));
-//		} 
-//        catch (IOException e) {
-//			e.printStackTrace();
-//		}
         		
 		int i=0;
 		float numOfXRaters;
@@ -124,7 +108,11 @@ public class NonPersonalizedRecommender {
 		for(long temp: movieIDs) { 				// converting the primitive long[] array to Long[]
 			givenMovieIDs[i++] = temp;
 		}
-						
+		
+		itemdao = csv.getItemDAO();
+		itemSet = itemdao.getItemIds();
+		float valuesArray[][]= new float[movieIDs.length][itemSet.size()-1];
+		
 		for(Long x: givenMovieIDs) {			
 			LongSet xUidSet = eventsByOneItem(x);			// get the set of users who have rated mID 'x'
 			numOfXRaters = xUidSet.size();
@@ -132,19 +120,15 @@ public class NonPersonalizedRecommender {
 			itemSet = itemdao.getItemIds();
 			
 			if(itemSet.contains(x)) {
-				System.out.println("of course itemSet has " + x);
+				// System.out.println("of course itemSet has " + x);
 				itemSet.remove(x);
-			}
-			
-			// 2D matrix to store the values of (x AND y)/x for all x in givenMovieIDs
-			float valuesArray[] = new float[itemSet.size()];
+			}									
 			
 			for(Long y: itemSet) {
-			// considering y|y belongs to mIDSet-{x}						
+			    // considering {y:y belongs to mIDSet-{x}}						
 				LongSet yUidSet = eventsByOneItem(y);	// get the set of users who have rated mID 'y'
 				// Calculating the intersection (x AND y)
-				LongSortedSet xyDifferenceSet = LongUtils.setDifference(xUidSet, yUidSet);
-				LongSortedSet yxDifferenceSet = LongUtils.setDifference(yUidSet, xUidSet);
+				LongSortedSet xyDifferenceSet = LongUtils.setDifference(xUidSet, yUidSet);				
 					
 				// xUidSet will have the users who rated both x AND y, after this operation
 				for(Long item: xyDifferenceSet) {
@@ -154,18 +138,40 @@ public class NonPersonalizedRecommender {
 				}					
 				numOfXYRaters = xUidSet.size();
 				float value = roundTheDecimals(numOfXYRaters/numOfXRaters, 2);
-				valuesArray[itemIndex++] = value;
-				// System.out.println("mID "+y+" value "+value);										
+				valuesArray[movieIndex][itemIndex++] = value;										
 				xUidSet = eventsByOneItem(x);								
 			}
+			movieIndex++;
 			itemIndex = 0;
 		}
+		writeToFile(valuesArray);
+		return;
+	}
+	
+	public void writeToFile(float[][] valuesArray) {		
+		try {
+			CSVWriter csvwriter = new CSVWriter(new FileWriter("data/outputfile.csv"), ',');
+			for(int movieIndex=0; movieIndex < valuesArray.length; ++movieIndex) {			
+				String[] rowValues = new String[valuesArray[movieIndex].length];
+				for(int itemIndex=0; itemIndex < valuesArray[movieIndex].length; ++itemIndex) {
+					rowValues[itemIndex] = String.format("%s", valuesArray[movieIndex][itemIndex]);
+				}
+				for(String s:rowValues) {
+					System.out.println(s);
+				}
+				System.out.println("\n\n");
+				csvwriter.writeNext(rowValues);
+			}
+		} 
+		catch (IOException e) {			
+			e.printStackTrace();
+		}			      		                
 	}
 	
 	public float roundTheDecimals(float f, int precision) {
 		 BigDecimal bd = new BigDecimal(Float.toString(f));
 		 bd = bd.setScale(precision, BigDecimal.ROUND_HALF_UP);
 	     return bd.floatValue();
-	 }
-	
+	}	
+
 }
