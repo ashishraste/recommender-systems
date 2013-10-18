@@ -168,25 +168,4 @@ public class NonPersonalizedRecommender {
 	     return bd.floatValue();
 	 }
 	
-	public void recoExample() {
-		 
-	        long array1[] = {1,2,3,4,5,6,9,10};
-	        long array2[] = {3,4,5,6,7,10};
-	        LongSet set1 = new LongArraySet(array1);
-	        LongSet set2 = new LongArraySet(array2);
-	        LongSortedSet set3, set4;	        
-	        
-	        System.out.println("Set 1: " + set1.toString());
-	        System.out.println("Set 2: " + set2.toString());
-	        
-	        set3 = LongUtils.setDifference(set1, set2);
-	        set4 = LongUtils.setDifference(set2, set1);
-	        
-	        for(Long item : set3) {
-	            if(set1.contains(item))
-	                set1.remove(item);
-	        }
-	        System.out.println("Set 1 Now contains intersection: " + set1.toString());
-	 }
-
 }
