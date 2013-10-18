@@ -11,12 +11,15 @@ public class Recommendations {
 		        npr.getData();
 		        
 		        // list all the events in the dataset
-		        npr.eventsListing();
+		        // npr.eventsListing();
 		        
 		        // get a listing of all the users who have interacted with an item		    	
-		        npr.eventsByItems();
+		        //npr.eventsByItems();
 		        
 		        // get a listing of the items that each user has interacted with
-		        npr.eventsByUsers();		        
+		        // npr.eventsByUsers();
+		        
+		        long listOfMovieIDs[] = {629, 9331, 180};
+		        npr.nonPersonalRecoCalculation(listOfMovieIDs);		       
 	}
 }
